@@ -1,18 +1,16 @@
 #include"httpServer.hpp"
 #include"indexHtml.h"
-#include<esp_log.h>
 #include "esp_spiffs.h"
-#include<memory>
 #include"jsonDecoder.hpp"
-#include<map>
 #include"customEvents.hpp"
-// #include"wifiManagerIdf.hpp"
+
+#include<esp_log.h>
+#include<esp_event.h>
+#include<map>
+#include<memory>
 
 
 static const char *TAG = "HTTPServer";
-// std::optional<std::map<std::string, std:: string>> HttpServer::credentialsMap= {};
-
-// std::optional<std::map<std::string, std::string>> WifiManagerIdf::credentials_opt;
 
 
 static esp_err_t get_handler(httpd_req_t *req)

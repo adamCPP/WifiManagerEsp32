@@ -4,10 +4,14 @@
 #include "esp_wifi.h"
 #include<memory>
 
+struct WifiManagerIdfConfig
+{
+    std::string ssid = "WIFI universal manager";
+    bool shouldKeepAP = true;
+};
 
 class WifiManagerIdf
 {
-
     std::unique_ptr<HttpServer> httpServer_ptr;
     
 
@@ -19,14 +23,15 @@ class WifiManagerIdf
     
     wifi_config_t ap_config;
     wifi_config_t sta_config;
+    
 
 public:
-    const bool PRESISTENT_AP;
     std::optional<std::map<std::string, std::string>> credentials_opt;
     std::optional<bool> staStarted_opt;
+    const WifiManagerIdfConfig managerConfig;
 
     
-    WifiManagerIdf(bool should_keep_ap = true);
+    WifiManagerIdf(WifiManagerIdfConfig p_managerConfig);
     bool setupWiFi(bool keepAP, bool andRun);
     void setupAPwithServer(bool andRun);
     void initWifi();

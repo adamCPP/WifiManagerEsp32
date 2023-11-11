@@ -105,14 +105,14 @@ static void customEventsHandler(void* arg, esp_event_base_t event_base,
                 ESP_LOGE(TAG,"Bad casting");
             }
             wifiMgrPtr->credentials_opt = ptr->value();
-            if(wifiMgrPtr->PRESISTENT_AP)
+            if(wifiMgrPtr->managerConfig.shouldKeepAP)
             {
                 ESP_LOGI(TAG,"Starting AP_STA");
-                wifiMgrPtr->setupWiFi(wifiMgrPtr->PRESISTENT_AP,true);
+                wifiMgrPtr->setupWiFi(wifiMgrPtr->managerConfig.shouldKeepAP,true);
             }
             else{
                 ESP_LOGI(TAG,"Starting only STA");
-                 wifiMgrPtr->setupWiFi(wifiMgrPtr->PRESISTENT_AP,true);
+                 wifiMgrPtr->setupWiFi(wifiMgrPtr->managerConfig.shouldKeepAP,true);
             }
 
             if(wifiMgrPtr->credentials_opt.has_value())
@@ -128,8 +128,8 @@ static void customEventsHandler(void* arg, esp_event_base_t event_base,
     }
 }
 
-WifiManagerIdf::WifiManagerIdf(bool should_keep_ap):
-PRESISTENT_AP(should_keep_ap)
+WifiManagerIdf::WifiManagerIdf(const WifiManagerIdfConfig p_managerConfig):
+managerConfig(p_managerConfig)
 {
     const char* ssid = "Wifi manager Hydroponika";
 
