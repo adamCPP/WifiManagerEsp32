@@ -4,7 +4,7 @@ const auto html_page = R"!(
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Hydroponika</title>
+  <title>Universal WiFi Manager</title>
   <style>
     body {
       background-image: url("https://apteka-melissa.pl/blog_zdjecia/medyczna-marihuana-koniec-tabu-rozwiewamy-watpliwosci-i-obawy.jpg");

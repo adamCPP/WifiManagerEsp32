@@ -131,11 +131,10 @@ static void customEventsHandler(void* arg, esp_event_base_t event_base,
 WifiManagerIdf::WifiManagerIdf(const WifiManagerIdfConfig p_managerConfig):
 managerConfig(p_managerConfig)
 {
-    const char* ssid = "Wifi manager Hydroponika";
 
     ap_config = {};
-    strncpy((char*)ap_config.ap.ssid, ssid, sizeof(ap_config.ap.ssid) - 1);
-    ap_config.ap.ssid_len = strlen(ssid);
+    strncpy((char*)ap_config.ap.ssid, managerConfig.ssid.c_str(), sizeof(ap_config.ap.ssid) - 1);
+    ap_config.ap.ssid_len = managerConfig.ssid.length();
     ap_config.ap.max_connection = 1;
     ap_config.ap.authmode = WIFI_AUTH_OPEN;
 
@@ -151,7 +150,8 @@ managerConfig(p_managerConfig)
     bool credFetched = tryFetchCredentialsFromSPIFFS();
     if(credFetched)
     {
-        setupWiFi(false,true);
+        if(managerConfig.shouldKeepAP) setupAPwithServer(false);
+        setupWiFi(managerConfig.shouldKeepAP,true);
     }
     else{
        setupAPwithServer(true);
