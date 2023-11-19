@@ -9,6 +9,8 @@
 #include"dnsRedirector.h"
 #include"customEvents.hpp"
 #include"spiffsControler.hpp"
+#include<utility>
+	
 
 static const char *TAG = "WIFI Mgr";
 
@@ -67,6 +69,7 @@ static void wifiEventHandler(void* arg, esp_event_base_t event_base,
         {
             wifiManagerIdf->staStarted_opt = true;
         }
+        wifiManagerIdf->scanAvailableWifiNetworks();
 
     } else if (event_id == WIFI_EVENT_STA_DISCONNECTED) {
         wifi_event_sta_disconnected_t* event = (wifi_event_sta_disconnected_t*) event_data; //TODO null check
@@ -139,6 +142,13 @@ managerConfig(p_managerConfig)
     ap_config.ap.authmode = WIFI_AUTH_OPEN;
 
     sta_config = {};
+
+    scan_config = {
+    .ssid = 0,
+    .bssid = 0,
+    .channel = 0,
+    .show_hidden = true
+  };
     
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -152,6 +162,7 @@ managerConfig(p_managerConfig)
     {
         if(managerConfig.shouldKeepAP) setupAPwithServer(false);
         setupWiFi(managerConfig.shouldKeepAP,true);
+        // scanAvailableWifiNetworks();
     }
     else{
        setupAPwithServer(true);
@@ -280,8 +291,32 @@ bool WifiManagerIdf::tryFetchCredentialsFromSPIFFS()
     return false;
 }
 
+void WifiManagerIdf::scanAvailableWifiNetworks() // wifi has to be already in sta mode
+{
+ 
+  ESP_LOGE(TAG, "Scanning available networks");
+  ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true));
+
+   uint16_t ap_count = 0;
+   esp_wifi_scan_get_ap_num(&ap_count);
+   wifi_ap_record_t* accessPoints =  new wifi_ap_record_t[ap_count];
+   esp_wifi_scan_get_ap_records(&ap_count,accessPoints);
+
+   foundedAPs = std::vector<wifi_ap_record_t>(ap_count);
+
+   for(auto i = 0; i<ap_count;++i)
+   {
+        foundedAPs.push_back(accessPoints[i]);
+        ESP_LOGD(TAG,"SSID: %s RSSI %d",(const char*)accessPoints[i].ssid,accessPoints[i].rssi);
+   }
+
+    delete[] accessPoints;
+
+}
+
 WifiManagerIdf::~WifiManagerIdf()
 {
+    stopHttpServer();
     esp_wifi_stop();
     esp_wifi_deinit();
     esp_netif_deinit();

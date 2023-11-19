@@ -3,6 +3,7 @@
 #include"httpServer.hpp"
 #include "esp_wifi.h"
 #include<memory>
+#include<vector>
 
 struct WifiManagerIdfConfig
 {
@@ -23,6 +24,8 @@ class WifiManagerIdf
     
     wifi_config_t ap_config;
     wifi_config_t sta_config;
+    wifi_scan_config_t scan_config;
+    std::vector<wifi_ap_record_t> foundedAPs;
     
 
 public:
@@ -35,6 +38,7 @@ public:
     bool setupWiFi(bool keepAP, bool andRun);
     void setupAPwithServer(bool andRun);
     void initWifi();
+    void scanAvailableWifiNetworks();
     ~WifiManagerIdf();
     
 
