@@ -104,18 +104,24 @@ bool HttpServer::startServer()
     config.server_port = 80;
 
     /* Empty handle to esp_http_server */
-    server = NULL;
+    server = nullptr;
 
     /* Start the httpd server */
-    if (httpd_start(&server, &config) == ESP_OK) {
+    auto err = httpd_start(&server, &config);
+    if (err == ESP_OK) {
         /* Register URI handlers */
         httpd_register_uri_handler(server, &uri_get);
         httpd_register_uri_handler(server, &uri_post);
         httpd_register_uri_handler(server, &uri_options);
         httpd_register_uri_handler(server, &androidCptv);
+
+        return true;
     }
-    /* If server failed to start, handle will be NULL */
-    return server == nullptr ? false:true;
+    else{
+        /* If server failed to start, handle will be NULL */
+        ESP_LOGE(TAG, "Failed to start a server (%s)", esp_err_to_name(err));
+        return false;
+    }
 
 }
 

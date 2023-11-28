@@ -224,7 +224,7 @@ void WifiManagerIdf::reqisterCutomEvents()
 {
     
     ESP_ERROR_CHECK(esp_event_handler_register(CUSTOM_EVENTS,
-                                                    CREDENTIALS_AQUIRED,
+                                                    ESP_EVENT_ANY_ID,
                                                     &customEventsHandler,
                                                     this));
     // ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS, CREDENTIALS_AQUIRED, nullptr, 0,portMAX_DELAY));
