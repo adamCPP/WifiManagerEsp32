@@ -80,7 +80,8 @@ static void wifiEventHandler(void* arg, esp_event_base_t event_base,
         // ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS, CREDENTIALS_AQUIRED, nullptr, 0,portMAX_DELAY
         if(event->reason == 201 or event->reason == 202) // wong ssid or password
         {
-            wifiManagerIdf->setupServerAndDns(true);
+            wifiManagerIdf->setupWiFi(true,true);
+            wifiManagerIdf->setupServerAndDns();
         }
     }
     else if(event_id == WIFI_EVENT_SCAN_DONE)
@@ -125,14 +126,14 @@ static void customEventsHandler(void* arg, esp_event_base_t event_base,
                 ESP_LOGE(TAG,"Bad casting");
             }
             wifiMgrPtr->credentials_opt = ptr->value();
-            if(wifiMgrPtr->managerConfig.shouldKeepAP)
+            if(wifiMgrPtr->managerConfig.shouldKeepAP) 
             {
                 ESP_LOGI(TAG,"Starting AP_STA");
                 wifiMgrPtr->setupWiFi(wifiMgrPtr->managerConfig.shouldKeepAP,true);
             }
             else{
                 ESP_LOGI(TAG,"Starting only STA");
-                 wifiMgrPtr->setupWiFi(wifiMgrPtr->managerConfig.shouldKeepAP,true);
+                 wifiMgrPtr->setupWiFi(wifiMgrPtr->managerConfig.shouldKeepAP,true); //TODO duplication
             }
 
             if(wifiMgrPtr->credentials_opt.has_value())
@@ -183,16 +184,16 @@ managerConfig(p_managerConfig)
     if(credFetched)
     {
         setupWiFi(managerConfig.shouldKeepAP,true);
-        if(managerConfig.shouldKeepAP) setupServerAndDns(false);
+        if(managerConfig.shouldKeepAP) setupServerAndDns();
     }
     else{
         setupWiFi(true,true);
-        setupServerAndDns(true);
+        setupServerAndDns();
     }
 
 }
 
-void WifiManagerIdf::setupServerAndDns(bool andRun)
+void WifiManagerIdf::setupServerAndDns()
 {
 
     bool serverStarted = startHttpServer();
@@ -304,15 +305,7 @@ bool WifiManagerIdf::tryFetchCredentialsFromSPIFFS()
 
 void WifiManagerIdf::scanAvailableWifiNetworks() // wifi has to be in sta mode
 {
-  wifi_mode_t wifiMode;
-  ESP_ERROR_CHECK(esp_wifi_get_mode(&wifiMode));
-  if(wifiMode == WIFI_MODE_AP)
-  {
-    ESP_LOGD(TAG, "Switching mode from AP to AP_STA");
-    ESP_ERROR_CHECK(esp_wifi_stop());                   // TODO may trigger unnecessary reconnection whet wifi is running in STA mode
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
-    ESP_ERROR_CHECK(esp_wifi_start());
-  }
+
   ESP_LOGE(TAG, "Scanning available networks");
   ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true));
 }
