@@ -19,6 +19,7 @@ static esp_err_t get_handler(httpd_req_t *req)
     const char* resp_str = html_page;
     
     httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
+    ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS,SCAN_AVAILABLE_APS,nullptr,0,portMAX_DELAY));
     return ESP_OK;
 }
 

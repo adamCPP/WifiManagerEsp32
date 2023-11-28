@@ -67,9 +67,8 @@ static void wifiEventHandler(void* arg, esp_event_base_t event_base,
         ESP_LOGI(TAG,"WIFI_EVENT_STA_CONNECTED");
         if(!wifiManagerIdf->staStarted_opt.has_value())
         {
-            wifiManagerIdf->staStarted_opt = true;
+            wifiManagerIdf->staStarted_opt = true; // ToDo consider removing it
         }
-        wifiManagerIdf->scanAvailableWifiNetworks();
 
     } else if (event_id == WIFI_EVENT_STA_DISCONNECTED) {
         wifi_event_sta_disconnected_t* event = (wifi_event_sta_disconnected_t*) event_data; //TODO null check
@@ -79,10 +78,28 @@ static void wifiEventHandler(void* arg, esp_event_base_t event_base,
         if(event->reason == 202 ) ESP_LOGE(TAG, "Wrong Password");
         if(!wifiManagerIdf->staStarted_opt.has_value()) wifiManagerIdf->staStarted_opt = false;
         // ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS, CREDENTIALS_AQUIRED, nullptr, 0,portMAX_DELAY
-        if(event->reason == 201 or event->reason == 202)
+        if(event->reason == 201 or event->reason == 202) // wong ssid or password
         {
             wifiManagerIdf->setupAPwithServer(true);
         }
+    }
+    else if(event_id == WIFI_EVENT_SCAN_DONE)
+    {
+        ESP_LOGI(TAG,"WIFI_EVENT_SCAN_DONE");
+        uint16_t ap_count = 0;
+        esp_wifi_scan_get_ap_num(&ap_count);
+        wifi_ap_record_t* accessPoints =  new wifi_ap_record_t[ap_count];
+        esp_wifi_scan_get_ap_records(&ap_count,accessPoints);
+
+        wifiManagerIdf->foundedAPs = std::vector<wifi_ap_record_t>(ap_count);
+
+        for(auto i = 0; i<ap_count;++i)
+        {
+            wifiManagerIdf->foundedAPs.push_back(accessPoints[i]);
+            ESP_LOGI(TAG,"SSID: %s RSSI %d",(const char*)accessPoints[i].ssid,accessPoints[i].rssi);
+        }
+
+        delete[] accessPoints;
     }
     else
     {
@@ -126,6 +143,11 @@ static void customEventsHandler(void* arg, esp_event_base_t event_base,
  
         }
     }
+    else if (event_id == SCAN_AVAILABLE_APS)
+    {
+        ESP_LOGI(TAG,"SCAN_AVAILABLE_APS event received");
+        wifiMgrPtr->scanAvailableWifiNetworks();
+    }
     else{
         ESP_LOGE(TAG,"Undefined custom event received. Id %d",CREDENTIALS_AQUIRED);
     }
@@ -162,7 +184,6 @@ managerConfig(p_managerConfig)
     {
         if(managerConfig.shouldKeepAP) setupAPwithServer(false);
         setupWiFi(managerConfig.shouldKeepAP,true);
-        // scanAvailableWifiNetworks();
     }
     else{
        setupAPwithServer(true);
@@ -291,27 +312,19 @@ bool WifiManagerIdf::tryFetchCredentialsFromSPIFFS()
     return false;
 }
 
-void WifiManagerIdf::scanAvailableWifiNetworks() // wifi has to be already in sta mode
+void WifiManagerIdf::scanAvailableWifiNetworks() // wifi has to be in sta mode
 {
- 
+  wifi_mode_t wifiMode;
+  ESP_ERROR_CHECK(esp_wifi_get_mode(&wifiMode));
+  if(wifiMode == WIFI_MODE_AP)
+  {
+    ESP_LOGE(TAG, "Switching mode from AP to AP_STA");
+    ESP_ERROR_CHECK(esp_wifi_stop());                   // TODO may trigger unnecessary reconnection whet wifi is running in STA mode
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+    ESP_ERROR_CHECK(esp_wifi_start());
+  }
   ESP_LOGE(TAG, "Scanning available networks");
-  ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true));
-
-   uint16_t ap_count = 0;
-   esp_wifi_scan_get_ap_num(&ap_count);
-   wifi_ap_record_t* accessPoints =  new wifi_ap_record_t[ap_count];
-   esp_wifi_scan_get_ap_records(&ap_count,accessPoints);
-
-   foundedAPs = std::vector<wifi_ap_record_t>(ap_count);
-
-   for(auto i = 0; i<ap_count;++i)
-   {
-        foundedAPs.push_back(accessPoints[i]);
-        ESP_LOGD(TAG,"SSID: %s RSSI %d",(const char*)accessPoints[i].ssid,accessPoints[i].rssi);
-   }
-
-    delete[] accessPoints;
-
+  ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, false));
 }
 
 WifiManagerIdf::~WifiManagerIdf()
