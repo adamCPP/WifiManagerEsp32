@@ -80,7 +80,7 @@ static void wifiEventHandler(void* arg, esp_event_base_t event_base,
         // ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS, CREDENTIALS_AQUIRED, nullptr, 0,portMAX_DELAY
         if(event->reason == 201 or event->reason == 202) // wong ssid or password
         {
-            wifiManagerIdf->setupAPwithServer(true);
+            wifiManagerIdf->setupServerAndDns(true);
         }
     }
     else if(event_id == WIFI_EVENT_SCAN_DONE)
@@ -182,19 +182,19 @@ managerConfig(p_managerConfig)
     bool credFetched = tryFetchCredentialsFromSPIFFS();
     if(credFetched)
     {
-        if(managerConfig.shouldKeepAP) setupAPwithServer(false);
         setupWiFi(managerConfig.shouldKeepAP,true);
+        if(managerConfig.shouldKeepAP) setupServerAndDns(false);
     }
     else{
-       setupAPwithServer(true);
+        setupWiFi(true,true);
+        setupServerAndDns(true);
     }
 
 }
 
-void WifiManagerIdf::setupAPwithServer(bool andRun)
+void WifiManagerIdf::setupServerAndDns(bool andRun)
 {
 
-    setupAP(andRun);
     bool serverStarted = startHttpServer();
     if(serverStarted)
     {
@@ -231,16 +231,6 @@ void WifiManagerIdf::reqisterCutomEvents()
 
 
 }
-void WifiManagerIdf::setupAP(bool andRun)
-{
-
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_config));
-    if(andRun) ESP_ERROR_CHECK(esp_wifi_start());
-
-    ESP_LOGI(TAG, "wifi_init_softap finished");
-}
-
 
 
 bool WifiManagerIdf::setupWiFi(bool keepAP, bool andRun)
@@ -318,13 +308,13 @@ void WifiManagerIdf::scanAvailableWifiNetworks() // wifi has to be in sta mode
   ESP_ERROR_CHECK(esp_wifi_get_mode(&wifiMode));
   if(wifiMode == WIFI_MODE_AP)
   {
-    ESP_LOGE(TAG, "Switching mode from AP to AP_STA");
+    ESP_LOGD(TAG, "Switching mode from AP to AP_STA");
     ESP_ERROR_CHECK(esp_wifi_stop());                   // TODO may trigger unnecessary reconnection whet wifi is running in STA mode
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
     ESP_ERROR_CHECK(esp_wifi_start());
   }
   ESP_LOGE(TAG, "Scanning available networks");
-  ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, false));
+  ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true));
 }
 
 WifiManagerIdf::~WifiManagerIdf()

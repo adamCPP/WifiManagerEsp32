@@ -16,7 +16,6 @@ class WifiManagerIdf
     std::unique_ptr<HttpServer> httpServer_ptr;
     
 
-    void setupAP(bool andRun);
     bool startHttpServer();
     void stopHttpServer();
     void reqisterCutomEvents();
@@ -37,7 +36,7 @@ public:
     
     WifiManagerIdf(WifiManagerIdfConfig p_managerConfig);
     bool setupWiFi(bool keepAP, bool andRun);
-    void setupAPwithServer(bool andRun);
+    void setupServerAndDns(bool andRun);
     void initWifi();
     void scanAvailableWifiNetworks();
     ~WifiManagerIdf();
