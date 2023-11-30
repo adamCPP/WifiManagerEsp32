@@ -1,0 +1,2 @@
+# Menuconfig
+CONFIG_HTTPD_WS_SUPPORT

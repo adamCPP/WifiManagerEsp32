@@ -3,6 +3,7 @@
 #include<optional>
 #include<map>
 #include<string>
+#include <functional>
 
 class HttpServer
 {
@@ -13,6 +14,9 @@ class HttpServer
     httpd_uri_t microsiftCptv;
     httpd_uri_t uri_patch;
     httpd_uri_t uri_options;
+    httpd_uri_t ws_uri_handler_options;
+
+    // std::function<esp_err_t(httpd_req_t*)> handler;
 
 
 public:

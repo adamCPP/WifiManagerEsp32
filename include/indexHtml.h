@@ -26,7 +26,7 @@ const auto html_page = R"!(
   </style>
 </head>
 <body>
-  <h1>Hydroponika</h1>
+  <h1>Universal WiFi Manager</h1>
   <form id="connection-form">
     <input type="text" id="ssid-input" placeholder="SSID" required><br>
     <input type="password" id="password-input" placeholder="Password" required><br>

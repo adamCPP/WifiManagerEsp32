@@ -10,6 +10,7 @@
 #include<memory>
 
 
+
 static const char *TAG = "HTTPServer";
 
 
@@ -48,6 +49,38 @@ static esp_err_t cors_handler(httpd_req_t *req)
 }
 
 
+ esp_err_t ws_handler(httpd_req_t *req)
+{
+    if (req->method == HTTP_GET) {
+    ESP_LOGI(TAG, "Handshake done, the new connection was opened");
+    return ESP_OK;
+    }
+    httpd_ws_frame_t ws_pkt = {};
+    ws_pkt.type = HTTPD_WS_TYPE_TEXT; // necessary?
+    auto ret = httpd_ws_recv_frame(req,&ws_pkt,0);
+
+    auto buff = std::make_unique<u_int8_t>(ws_pkt.len);
+
+    if (ret != ESP_OK)
+    {
+        ESP_LOGE(TAG, "httpd_ws_recv_frame failed to get frame len with %d", ret);
+        return ret;
+    }
+    if (ws_pkt.len)
+    {
+
+        ws_pkt.payload = buff.get();
+        ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
+        if (ret != ESP_OK)
+        {
+            ESP_LOGE(TAG, "httpd_ws_recv_frame failed with %d", ret);
+            return ret;
+        }
+        ESP_LOGI(TAG, "Got packet with message: %s", ws_pkt.payload);
+    }
+
+   return ESP_OK;
+}
 HttpServer::HttpServer()
 {
     uri_get = {};
@@ -88,7 +121,13 @@ HttpServer::HttpServer()
     uri_patch.user_ctx = nullptr;
     uri_patch.handler = cors_handler;
 
-
+  
+    ws_uri_handler_options= {};
+    ws_uri_handler_options.uri = "/ws";
+    ws_uri_handler_options.method = HTTP_GET;
+    ws_uri_handler_options.user_ctx = nullptr;
+    ws_uri_handler_options.handler =  ws_handler;
+    ws_uri_handler_options.is_websocket = true;
 }
 
 HttpServer::~HttpServer()
@@ -114,6 +153,7 @@ bool HttpServer::startServer()
         httpd_register_uri_handler(server, &uri_post);
         httpd_register_uri_handler(server, &uri_options);
         httpd_register_uri_handler(server, &androidCptv);
+        ESP_ERROR_CHECK(httpd_register_uri_handler(server, &ws_uri_handler_options));
 
         return true;
     }
