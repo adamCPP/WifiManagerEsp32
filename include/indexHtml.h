@@ -7,7 +7,8 @@ const auto html_page = R"!(
   <title>Universal WiFi Manager</title>
   <style>
     body {
-      background-image: url("https://apteka-melissa.pl/blog_zdjecia/medyczna-marihuana-koniec-tabu-rozwiewamy-watpliwosci-i-obawy.jpg");
+      background: linear-gradient(to bottom, #808080, #c0c0c0);
+      height: 100vh;
       background-size: cover;
       background-repeat: no-repeat;
       text-align: center;
@@ -23,10 +24,30 @@ const auto html_page = R"!(
       padding: 10px 20px;
       margin-top: 10px;
     }
+    .tile {
+        width: 50vw;
+        height: 10vh;
+        border: 1px solid #ccc;
+        margin-left: auto;
+        margin-right: auto;
+        margin-bottom: 5px;
+        display: block
+        cursor: pointer;
+    }
+
+    .tile.active {
+        background-color: #3498db;
+        color: #fff;
+    }
   </style>
 </head>
 <body>
   <h1>Universal WiFi Manager</h1>
+  <h2>Available APs</h2>
+    <div class="tile" onclick="handleTileClick(this)">Kafelek 1</div>
+    <div class="tile" onclick="handleTileClick(this)">Kafelek 2</div>
+    <div class="tile" onclick="handleTileClick(this)">Kafelek 3</div>
+
   <form id="connection-form">
     <input type="text" id="ssid-input" placeholder="SSID" required><br>
     <input type="password" id="password-input" placeholder="Password" required><br>
@@ -60,6 +81,19 @@ const auto html_page = R"!(
       // Wysłanie żądania
       xhr.send(data);
     }
+
+     function handleTileClick(tile) {
+            // Wszystkie kafelki
+            var tiles = document.querySelectorAll('.tile');
+
+            // Usunięcie aktywnego stanu ze wszystkich kafelków
+            tiles.forEach(function (tile) {
+                tile.classList.remove('active');
+            });
+
+            // Dodanie aktywnego stanu tylko do klikniętego kafelka
+            tile.classList.add('active');
+        }
   </script>
 </body>
 </html>

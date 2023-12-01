@@ -52,6 +52,8 @@ static esp_err_t cors_handler(httpd_req_t *req)
 
  esp_err_t ws_handler(httpd_req_t *req)
 {
+    auto httpServerWraper_ptr = static_cast<HttpServer*>(req->user_ctx);
+
     if (req->method == HTTP_GET) {
     ESP_LOGI(TAG, "Handshake done, the new connection was opened");
     return ESP_OK;
@@ -90,6 +92,8 @@ static esp_err_t cors_handler(httpd_req_t *req)
     std::string command = ss.str();
     ESP_LOGI(TAG, "Message : %s", command.c_str());
 
+    httpServerWraper_ptr->socketDescriptor = httpd_req_to_sockfd(req);
+
     if(command == "ss") // scan aps and send result via websocket
     {
         ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS,SCAN_AVAILABLE_APS,nullptr,0,portMAX_DELAY));
@@ -99,6 +103,26 @@ static esp_err_t cors_handler(httpd_req_t *req)
     }
 
    return ESP_OK;
+}
+
+void sendAPsCallback(void *arg)
+{
+    auto httpServer_ptr = static_cast<HttpServer*>(arg);
+    httpd_ws_frame_t ws_pkt;
+    ws_pkt.type = HTTPD_WS_TYPE_TEXT;
+    // auto payload = httpServer_ptr->getMessagePayload().c_str();
+    ws_pkt.payload = (uint8_t*)httpServer_ptr->getMessagePayload().c_str();
+    ws_pkt.len = httpServer_ptr->getMessagePayload().length() +1;
+
+    httpd_ws_client_info_t clientInfo = httpd_ws_get_fd_info(httpServer_ptr->getServerHandle(),httpServer_ptr->socketDescriptor);
+    if(clientInfo != HTTPD_WS_CLIENT_WEBSOCKET)
+    {
+        ESP_LOGE(TAG,"Ivalid socket type. Response not sended");
+        return;
+    }
+
+    httpd_ws_send_frame_async(httpServer_ptr->getServerHandle(),httpServer_ptr->socketDescriptor,&ws_pkt);
+
 }
 HttpServer::HttpServer()
 {
@@ -144,14 +168,23 @@ HttpServer::HttpServer()
     ws_uri_handler_options= {};
     ws_uri_handler_options.uri = "/ws";
     ws_uri_handler_options.method = HTTP_GET;
-    ws_uri_handler_options.user_ctx = nullptr;
+    ws_uri_handler_options.user_ctx = this;
     ws_uri_handler_options.handler =  ws_handler;
     ws_uri_handler_options.is_websocket = true;
 }
 
-void HttpServer::sendScanedAPs(std::vector<wifi_ap_record_t>)
+void HttpServer::sendScanedAPs(const std::vector<wifi_ap_record_t>& ap)
 {
-    
+    std::map<std::string,std::string> valMap;
+
+    for (const auto& item : ap)
+    {
+        valMap.emplace(std::make_pair<std::string,std::string>((char *)item.ssid,std::to_string(item.rssi)));
+    }
+    messagePayload = JsonDecoder::encodeJson(valMap); //TODO consider protect by mutex
+
+    httpd_queue_work(server,sendAPsCallback,this);
+
 }
 
 HttpServer::~HttpServer()

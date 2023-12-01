@@ -36,7 +36,7 @@ std::optional<std::map<std::string, std:: string>> JsonDecoder::decodeJsonCreden
     return results;
 }
 
-std::string JsonDecoder::encodeJson(std::map<std::string, std:: string> valuesToEncode)
+std::string JsonDecoder::encodeJson(const std::map<std::string, std:: string>& valuesToEncode)
 {
     cJSON* root = cJSON_CreateObject();
 

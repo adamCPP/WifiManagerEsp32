@@ -1,5 +1,5 @@
 #pragma once
-#include <esp_http_server.h>
+#include "esp_http_server.h"
 #include<optional>
 #include<map>
 #include<string>
@@ -17,14 +17,22 @@ class HttpServer
     httpd_uri_t uri_options;
     httpd_uri_t ws_uri_handler_options;
 
+    std::string messagePayload; // JSON encoded
+
+
     // std::function<esp_err_t(httpd_req_t*)> handler;
 
 
 public:
-    // static std::optional<std::map<std::string, std:: string>> credentialsMap;
+    
+    int socketDescriptor=0; // this lib is supposed to communicate over only one web socket
+
     HttpServer();
-    void sendScanedAPs(std::vector<wifi_ap_record_t>);
+    void sendScanedAPs(const std::vector<wifi_ap_record_t>&);
     ~HttpServer();
     bool startServer(); 
-    void stopServer();  // TODO consider moving it to private scope
+    void stopServer(); // TODO consider moving it to private scope
+    httpd_handle_t getServerHandle(){return server;};
+    std::string& getMessagePayload(){return messagePayload;};
+    
 };
