@@ -92,14 +92,14 @@ static void wifiEventHandler(void* arg, esp_event_base_t event_base,
         wifi_ap_record_t* accessPoints =  new wifi_ap_record_t[ap_count];
         esp_wifi_scan_get_ap_records(&ap_count,accessPoints);
 
-        wifiManagerIdf->foundedAPs = std::vector<wifi_ap_record_t>(ap_count);
+        wifiManagerIdf->foundedAPs = std::vector<wifi_ap_record_t>(ap_count); //TODO  this is unnecessary since we have sending response immediately
 
         for(auto i = 0; i<ap_count;++i)
         {
             wifiManagerIdf->foundedAPs.push_back(accessPoints[i]);
             ESP_LOGI(TAG,"SSID: %s RSSI %d",(const char*)accessPoints[i].ssid,accessPoints[i].rssi);
         }
-
+        wifiManagerIdf->sendScannedAP();
         delete[] accessPoints;
     }
     else
@@ -253,6 +253,10 @@ bool WifiManagerIdf::setupWiFi(bool keepAP, bool andRun)
     else
     {
         ESP_LOGE(TAG,"Credentials for sta mod hasn't been set");
+        ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+        ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_config));
+        if(keepAP) ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_config));  
+        if(andRun) ESP_ERROR_CHECK(esp_wifi_start());  
         return false;
     }
     return true;
@@ -308,6 +312,11 @@ void WifiManagerIdf::scanAvailableWifiNetworks() // wifi has to be in sta mode
 
   ESP_LOGE(TAG, "Scanning available networks");
   ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true));
+}
+
+void WifiManagerIdf::sendScannedAP()
+{
+    httpServer_ptr->sendScanedAPs(foundedAPs);
 }
 
 WifiManagerIdf::~WifiManagerIdf()

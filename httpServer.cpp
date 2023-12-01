@@ -8,6 +8,7 @@
 #include<esp_event.h>
 #include<map>
 #include<memory>
+#include<sstream>
 
 
 
@@ -59,13 +60,13 @@ static esp_err_t cors_handler(httpd_req_t *req)
     ws_pkt.type = HTTPD_WS_TYPE_TEXT; // necessary?
     auto ret = httpd_ws_recv_frame(req,&ws_pkt,0);
 
-    auto buff = std::make_unique<u_int8_t>(ws_pkt.len);
-
     if (ret != ESP_OK)
     {
         ESP_LOGE(TAG, "httpd_ws_recv_frame failed to get frame len with %d", ret);
         return ret;
     }
+    auto buff = std::make_unique<u_int8_t>(ws_pkt.len);
+    ESP_LOGE(TAG,"Package length = %d",ws_pkt.len);
     if (ws_pkt.len)
     {
 
@@ -77,6 +78,24 @@ static esp_err_t cors_handler(httpd_req_t *req)
             return ret;
         }
         ESP_LOGI(TAG, "Got packet with message: %s", ws_pkt.payload);
+    }
+
+    std::stringstream ss;
+
+    for(auto i=0;i<ws_pkt.len;++i)
+    {
+        ss<<ws_pkt.payload[i];
+    }
+
+    std::string command = ss.str();
+    ESP_LOGI(TAG, "Message : %s", command.c_str());
+
+    if(command == "ss") // scan aps and send result via websocket
+    {
+        ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS,SCAN_AVAILABLE_APS,nullptr,0,portMAX_DELAY));
+    }
+    else{
+        ESP_LOGI(TAG, "Unrecoginzed command: %s", command.c_str());
     }
 
    return ESP_OK;
@@ -128,6 +147,11 @@ HttpServer::HttpServer()
     ws_uri_handler_options.user_ctx = nullptr;
     ws_uri_handler_options.handler =  ws_handler;
     ws_uri_handler_options.is_websocket = true;
+}
+
+void HttpServer::sendScanedAPs(std::vector<wifi_ap_record_t>)
+{
+    
 }
 
 HttpServer::~HttpServer()

@@ -4,6 +4,7 @@
 #include<map>
 #include<string>
 #include <functional>
+#include"esp_wifi_types.h" // for wifi_ap_record_t
 
 class HttpServer
 {
@@ -22,6 +23,7 @@ class HttpServer
 public:
     // static std::optional<std::map<std::string, std:: string>> credentialsMap;
     HttpServer();
+    void sendScanedAPs(std::vector<wifi_ap_record_t>);
     ~HttpServer();
     bool startServer(); 
     void stopServer();  // TODO consider moving it to private scope

@@ -35,6 +35,7 @@ public:
 
     
     WifiManagerIdf(WifiManagerIdfConfig p_managerConfig);
+    void sendScannedAP();
     bool setupWiFi(bool keepAP, bool andRun);
     void setupServerAndDns();
     void initWifi();
