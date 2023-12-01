@@ -7,5 +7,5 @@ class JsonDecoder
 {
 public:
     static std::optional<std::map<std::string, std:: string>>  decodeJsonCredentials(std::string jsonContent);
-    static std::string encodeJsonCredentials(std::map<std::string, std:: string> credentialsMap);
+    static std::string encodeJson(std::map<std::string, std:: string> valuesToEncede);
 };

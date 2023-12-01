@@ -36,17 +36,15 @@ std::optional<std::map<std::string, std:: string>> JsonDecoder::decodeJsonCreden
     return results;
 }
 
-std::string JsonDecoder::encodeJsonCredentials(std::map<std::string, std:: string> p_credentialsMap)
+std::string JsonDecoder::encodeJson(std::map<std::string, std:: string> valuesToEncode)
 {
     cJSON* root = cJSON_CreateObject();
 
-    const std::string ssid = p_credentialsMap["ssid"];
-    const std::string password = p_credentialsMap["password"];
 
-
-
-    cJSON_AddStringToObject(root, "ssid", ssid.c_str());
-    cJSON_AddStringToObject(root, "password", password.c_str());
+    for(const auto& pair : valuesToEncode)
+    {
+        cJSON_AddStringToObject(root, pair.first.c_str(), pair.second.c_str());
+    }
 
     char* jsonString = cJSON_Print(root);
     std::string encodedJson(jsonString);

@@ -67,7 +67,7 @@ bool SPIFFSControler::writeCredentials(std::map<std::string, std:: string> creda
         return false;
     }
         
-    std::string endodedJsonString = JsonDecoder::encodeJsonCredentials(credantialsMap_opt);
+    std::string endodedJsonString = JsonDecoder::encodeJson(credantialsMap_opt);
     ESP_LOGE(TAG, "Cred in writeCredentials %s",endodedJsonString.c_str());
 
     ESP_LOGI(TAG, "Opening file");
