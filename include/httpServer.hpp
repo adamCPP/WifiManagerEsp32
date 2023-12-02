@@ -32,7 +32,7 @@ public:
     ~HttpServer();
     bool startServer(); 
     void stopServer(); // TODO consider moving it to private scope
-    httpd_handle_t getServerHandle(){return server;};
+    httpd_handle_t& getServerHandle(){return server;};
     std::string& getMessagePayload(){return messagePayload;};
     
 };

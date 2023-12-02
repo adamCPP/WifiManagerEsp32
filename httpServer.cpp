@@ -21,7 +21,7 @@ static esp_err_t get_handler(httpd_req_t *req)
     const char* resp_str = html_page;
     
     httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
-    ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS,SCAN_AVAILABLE_APS,nullptr,0,portMAX_DELAY));
+    // ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS,SCAN_AVAILABLE_APS,nullptr,0,portMAX_DELAY));
     return ESP_OK;
 }
 
@@ -108,7 +108,7 @@ static esp_err_t cors_handler(httpd_req_t *req)
 void sendAPsCallback(void *arg)
 {
     auto httpServer_ptr = static_cast<HttpServer*>(arg);
-    httpd_ws_frame_t ws_pkt;
+    static httpd_ws_frame_t ws_pkt;
     ws_pkt.type = HTTPD_WS_TYPE_TEXT;
     // auto payload = httpServer_ptr->getMessagePayload().c_str();
     ws_pkt.payload = (uint8_t*)httpServer_ptr->getMessagePayload().c_str();
@@ -117,11 +117,12 @@ void sendAPsCallback(void *arg)
     httpd_ws_client_info_t clientInfo = httpd_ws_get_fd_info(httpServer_ptr->getServerHandle(),httpServer_ptr->socketDescriptor);
     if(clientInfo != HTTPD_WS_CLIENT_WEBSOCKET)
     {
-        ESP_LOGE(TAG,"Invalid socket type. Response not sended");
+        ESP_LOGE(TAG,"Invalid socket type. Response not sended %d", clientInfo);
         return;
     }
 
-    httpd_ws_send_frame_async(httpServer_ptr->getServerHandle(),httpServer_ptr->socketDescriptor,&ws_pkt);
+    auto ret = httpd_ws_send_frame_async(httpServer_ptr->getServerHandle(),httpServer_ptr->socketDescriptor,&ws_pkt);
+    if (ret!= ESP_OK) ESP_LOGE(TAG,"%s",esp_err_to_name(ret));
 
 }
 HttpServer::HttpServer()

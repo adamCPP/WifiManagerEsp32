@@ -63,6 +63,8 @@ const auto html_page = R"!(
       socket = new WebSocket("ws://4.3.2.1/ws");
     } 
     socket.addEventListener('message',handleApListMessage);
+    socket.addEventListener('open', function (event) {
+    refresh();});
     function sendCredentials() {
       var ssid = document.getElementById("ssid-input").value;
       var password = document.getElementById("password-input").value;
