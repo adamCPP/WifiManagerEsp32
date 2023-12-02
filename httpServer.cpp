@@ -112,12 +112,12 @@ void sendAPsCallback(void *arg)
     ws_pkt.type = HTTPD_WS_TYPE_TEXT;
     // auto payload = httpServer_ptr->getMessagePayload().c_str();
     ws_pkt.payload = (uint8_t*)httpServer_ptr->getMessagePayload().c_str();
-    ws_pkt.len = httpServer_ptr->getMessagePayload().length() +1;
+    ws_pkt.len = httpServer_ptr->getMessagePayload().length();
 
     httpd_ws_client_info_t clientInfo = httpd_ws_get_fd_info(httpServer_ptr->getServerHandle(),httpServer_ptr->socketDescriptor);
     if(clientInfo != HTTPD_WS_CLIENT_WEBSOCKET)
     {
-        ESP_LOGE(TAG,"Ivalid socket type. Response not sended");
+        ESP_LOGE(TAG,"Invalid socket type. Response not sended");
         return;
     }
 

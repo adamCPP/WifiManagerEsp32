@@ -96,6 +96,7 @@ static void wifiEventHandler(void* arg, esp_event_base_t event_base,
 
         for(auto i = 0; i<ap_count;++i)
         {
+            if(accessPoints[i].rssi == 0) continue; //skiping self
             wifiManagerIdf->foundedAPs.push_back(accessPoints[i]);
             ESP_LOGI(TAG,"SSID: %s RSSI %d",(const char*)accessPoints[i].ssid,accessPoints[i].rssi);
         }
