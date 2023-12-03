@@ -1,5 +1,7 @@
 #include"httpServer.hpp"
 #include"indexHtml.h"
+#include"style.h"
+#include"script.h"
 #include "esp_spiffs.h"
 #include"jsonDecoder.hpp"
 #include"customEvents.hpp"
@@ -14,11 +16,31 @@
 static const char *TAG = "HTTPServer";
 
 
-static esp_err_t get_handler(httpd_req_t *req)
+static esp_err_t get_html_handler(httpd_req_t *req)
 {
-    ESP_LOGI(TAG,"GET");
+    ESP_LOGI(TAG,"GET html");
     const char* resp_str = html_page;
     
+    httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
+    // ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS,SCAN_AVAILABLE_APS,nullptr,0,portMAX_DELAY));
+    return ESP_OK;
+}
+
+static esp_err_t get_js_handler(httpd_req_t *req)
+{
+    ESP_LOGI(TAG,"GET js");
+    const char* resp_str = script;
+    
+    httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
+    // ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS,SCAN_AVAILABLE_APS,nullptr,0,portMAX_DELAY));
+    return ESP_OK;
+}
+
+static esp_err_t get_css_handler(httpd_req_t *req)
+{
+    ESP_LOGI(TAG,"GET css");
+    const char* resp_str = style;
+    httpd_resp_set_type(req, "text/css");
     httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
     // ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS,SCAN_AVAILABLE_APS,nullptr,0,portMAX_DELAY));
     return ESP_OK;
@@ -54,7 +76,7 @@ esp_err_t ws_aps_handler(httpd_req_t *req) // TODO code duplication with other h
     auto httpServerWraper_ptr = static_cast<HttpServer*>(req->user_ctx);
 
     if (req->method == HTTP_GET) {
-    ESP_LOGI(TAG, "Handshake done, the new connection was opened");
+    ESP_LOGI(TAG, "Handshake done for APS, the new connection was opened");
     return ESP_OK;
     }
     httpd_ws_frame_t ws_pkt = {};
@@ -91,7 +113,7 @@ esp_err_t ws_custmo_params_handler(httpd_req_t *req)
     auto httpServerWraper_ptr = static_cast<HttpServer*>(req->user_ctx);
 
     if (req->method == HTTP_GET) {
-    ESP_LOGI(TAG, "Handshake done, the new connection was opened");
+    ESP_LOGI(TAG, "Handshake done for CP, the new connection was opened");
     return ESP_OK;
     }
     httpd_ws_frame_t ws_pkt = {};
@@ -166,23 +188,35 @@ void sendCustomParamsCallback(void *arg) //TODO code duplication
 }
 HttpServer::HttpServer()
 {
-    uri_get = {};
-    uri_get.uri = "/";
-    uri_get.method = HTTP_GET;
-    uri_get.user_ctx = nullptr;
-    uri_get.handler = get_handler;
+    uri_get_html = {};
+    uri_get_html.uri = "/";
+    uri_get_html.method = HTTP_GET;
+    uri_get_html.user_ctx = nullptr;
+    uri_get_html.handler = get_html_handler;
+    
+    uri_get_js = {};
+    uri_get_js.uri = "/myScript.js";
+    uri_get_js.method = HTTP_GET;
+    uri_get_js.user_ctx = nullptr;
+    uri_get_js.handler = get_js_handler;
+
+    uri_get_css = {};
+    uri_get_css.uri = "/styles.css";
+    uri_get_css.method = HTTP_GET;
+    uri_get_css.user_ctx = nullptr;
+    uri_get_css.handler = get_css_handler;
 
     androidCptv = {};
     androidCptv.uri = "/generate_204";
     androidCptv.method = HTTP_GET;
     androidCptv.user_ctx = nullptr;
-    androidCptv.handler = get_handler;
+    androidCptv.handler = get_html_handler;
 
     microsiftCptv = {};
     microsiftCptv.uri = "/redirect";
     microsiftCptv.method = HTTP_GET;
     microsiftCptv.user_ctx = nullptr;
-    microsiftCptv.handler = get_handler;
+    microsiftCptv.handler = get_html_handler;
     
 
     uri_postCredentials = {};
@@ -261,7 +295,9 @@ bool HttpServer::startServer(bool enable_custom_params_socket)
     auto err = httpd_start(&server, &config);
     if (err == ESP_OK) {
         /* Register URI handlers */
-        httpd_register_uri_handler(server, &uri_get);
+        httpd_register_uri_handler(server, &uri_get_html);
+        httpd_register_uri_handler(server, &uri_get_js);
+        httpd_register_uri_handler(server, &uri_get_css);
         httpd_register_uri_handler(server, &uri_post);
         httpd_register_uri_handler(server, &uri_postCredentials);
         httpd_register_uri_handler(server, &androidCptv);

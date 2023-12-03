@@ -9,7 +9,9 @@
 class HttpServer
 {
     httpd_handle_t server;
-    httpd_uri_t uri_get;
+    httpd_uri_t uri_get_html;
+    httpd_uri_t uri_get_js;
+    httpd_uri_t uri_get_css;
     httpd_uri_t uri_post;
     httpd_uri_t androidCptv;
     httpd_uri_t microsiftCptv;
