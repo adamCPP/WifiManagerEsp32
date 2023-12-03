@@ -14,10 +14,12 @@ class HttpServer
     httpd_uri_t androidCptv;
     httpd_uri_t microsiftCptv;
     httpd_uri_t uri_patch;
-    httpd_uri_t uri_options;
-    httpd_uri_t ws_uri_handler_options;
+    httpd_uri_t uri_postCredentials;
+    httpd_uri_t ws_APs_uri_handler_options;
+    httpd_uri_t ws_custom_params_uri_handler_options;
 
-    std::string messagePayload; // JSON encoded
+    std::string APsMessagePayload; // JSON encoded
+    std::string customParamsMessagePayload; // JSON encoded
 
 
     // std::function<esp_err_t(httpd_req_t*)> handler;
@@ -25,14 +27,18 @@ class HttpServer
 
 public:
     
-    int socketDescriptor=0; // this lib is supposed to communicate over only one web socket
+    int APsSocketDescriptor=0;
+    int loggerSocketDescriptor=0;
+    int customParamsSocketDescriptor=0;
 
     HttpServer();
     void sendScanedAPs(const std::vector<wifi_ap_record_t>&);
+    void sendCustomParams(const std::map<std::string,std::string>&);
     ~HttpServer();
-    bool startServer(); 
+    bool startServer(bool enable_custom_params_socket); 
     void stopServer(); // TODO consider moving it to private scope
     httpd_handle_t& getServerHandle(){return server;};
-    std::string& getMessagePayload(){return messagePayload;};
+    std::string& getAPsMessagePayload(){return APsMessagePayload;};
+    std::string& getCustomParametersMessagePayload(){return customParamsMessagePayload;};
     
 };

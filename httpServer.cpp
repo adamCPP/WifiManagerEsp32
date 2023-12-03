@@ -8,7 +8,6 @@
 #include<esp_event.h>
 #include<map>
 #include<memory>
-#include<sstream>
 
 
 
@@ -50,7 +49,7 @@ static esp_err_t cors_handler(httpd_req_t *req)
 }
 
 
- esp_err_t ws_handler(httpd_req_t *req)
+esp_err_t ws_aps_handler(httpd_req_t *req) // TODO code duplication with other handlers
 {
     auto httpServerWraper_ptr = static_cast<HttpServer*>(req->user_ctx);
 
@@ -82,27 +81,47 @@ static esp_err_t cors_handler(httpd_req_t *req)
         ESP_LOGI(TAG, "Got packet with message: %s", ws_pkt.payload);
     }
 
-    std::stringstream ss;
+    httpServerWraper_ptr->APsSocketDescriptor = httpd_req_to_sockfd(req);
+    ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS,SCAN_AVAILABLE_APS,nullptr,0,portMAX_DELAY));
 
-    for(auto i=0;i<ws_pkt.len;++i)
+    return ESP_OK;
+}
+esp_err_t ws_custmo_params_handler(httpd_req_t *req)
+{
+    auto httpServerWraper_ptr = static_cast<HttpServer*>(req->user_ctx);
+
+    if (req->method == HTTP_GET) {
+    ESP_LOGI(TAG, "Handshake done, the new connection was opened");
+    return ESP_OK;
+    }
+    httpd_ws_frame_t ws_pkt = {};
+    ws_pkt.type = HTTPD_WS_TYPE_TEXT; // necessary?
+    auto ret = httpd_ws_recv_frame(req,&ws_pkt,0);
+
+    if (ret != ESP_OK)
     {
-        ss<<ws_pkt.payload[i];
+        ESP_LOGE(TAG, "httpd_ws_recv_frame failed to get frame len with %d", ret);
+        return ret;
     }
-
-    std::string command = ss.str();
-    ESP_LOGI(TAG, "Message : %s", command.c_str());
-
-    httpServerWraper_ptr->socketDescriptor = httpd_req_to_sockfd(req);
-
-    if(command == "ss") // scan aps and send result via websocket
+    auto buff = std::make_unique<u_int8_t>(ws_pkt.len);
+    ESP_LOGE(TAG,"Package length = %d",ws_pkt.len);
+    if (ws_pkt.len)
     {
-        ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS,SCAN_AVAILABLE_APS,nullptr,0,portMAX_DELAY));
-    }
-    else{
-        ESP_LOGI(TAG, "Unrecoginzed command: %s", command.c_str());
+
+        ws_pkt.payload = buff.get();
+        ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
+        if (ret != ESP_OK)
+        {
+            ESP_LOGE(TAG, "httpd_ws_recv_frame failed with %d", ret);
+            return ret;
+        }
+        ESP_LOGI(TAG, "Got packet with message: %s", ws_pkt.payload);
     }
 
-   return ESP_OK;
+    httpServerWraper_ptr->customParamsSocketDescriptor = httpd_req_to_sockfd(req);
+    ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS,SEND_DEFAULT_PARAMETERS,nullptr,0,portMAX_DELAY));
+
+    return ESP_OK;
 }
 
 void sendAPsCallback(void *arg)
@@ -110,18 +129,38 @@ void sendAPsCallback(void *arg)
     auto httpServer_ptr = static_cast<HttpServer*>(arg);
     static httpd_ws_frame_t ws_pkt;
     ws_pkt.type = HTTPD_WS_TYPE_TEXT;
-    // auto payload = httpServer_ptr->getMessagePayload().c_str();
-    ws_pkt.payload = (uint8_t*)httpServer_ptr->getMessagePayload().c_str();
-    ws_pkt.len = httpServer_ptr->getMessagePayload().length();
+    // auto payload = httpServer_ptr->getAPsMessagePayload().c_str();
+    ws_pkt.payload = (uint8_t*)httpServer_ptr->getAPsMessagePayload().c_str();
+    ws_pkt.len = httpServer_ptr->getAPsMessagePayload().length();
 
-    httpd_ws_client_info_t clientInfo = httpd_ws_get_fd_info(httpServer_ptr->getServerHandle(),httpServer_ptr->socketDescriptor);
+    httpd_ws_client_info_t clientInfo = httpd_ws_get_fd_info(httpServer_ptr->getServerHandle(),httpServer_ptr->APsSocketDescriptor);
     if(clientInfo != HTTPD_WS_CLIENT_WEBSOCKET)
     {
         ESP_LOGE(TAG,"Invalid socket type. Response not sended %d", clientInfo);
         return;
     }
 
-    auto ret = httpd_ws_send_frame_async(httpServer_ptr->getServerHandle(),httpServer_ptr->socketDescriptor,&ws_pkt);
+    auto ret = httpd_ws_send_frame_async(httpServer_ptr->getServerHandle(),httpServer_ptr->APsSocketDescriptor,&ws_pkt);
+    if (ret!= ESP_OK) ESP_LOGE(TAG,"%s",esp_err_to_name(ret));
+
+}
+
+void sendCustomParamsCallback(void *arg) //TODO code duplication
+{
+    auto httpServer_ptr = static_cast<HttpServer*>(arg);
+    static httpd_ws_frame_t ws_pkt;
+    ws_pkt.type = HTTPD_WS_TYPE_TEXT;
+    ws_pkt.payload = (uint8_t*)httpServer_ptr->getCustomParametersMessagePayload().c_str();
+    ws_pkt.len = httpServer_ptr->getCustomParametersMessagePayload().length();
+
+    httpd_ws_client_info_t clientInfo = httpd_ws_get_fd_info(httpServer_ptr->getServerHandle(),httpServer_ptr->customParamsSocketDescriptor);
+    if(clientInfo != HTTPD_WS_CLIENT_WEBSOCKET)
+    {
+        ESP_LOGE(TAG,"Invalid socket type. Response not sended %d", clientInfo);
+        return;
+    }
+
+    auto ret = httpd_ws_send_frame_async(httpServer_ptr->getServerHandle(),httpServer_ptr->customParamsSocketDescriptor,&ws_pkt);
     if (ret!= ESP_OK) ESP_LOGE(TAG,"%s",esp_err_to_name(ret));
 
 }
@@ -146,11 +185,11 @@ HttpServer::HttpServer()
     microsiftCptv.handler = get_handler;
     
 
-    uri_options = {};
-    uri_options.uri = "/postCredentials";
-    uri_options.method = HTTP_POST;
-    uri_options.user_ctx = nullptr;
-    uri_options.handler = post_handler;
+    uri_postCredentials = {};
+    uri_postCredentials.uri = "/postCredentials";
+    uri_postCredentials.method = HTTP_POST;
+    uri_postCredentials.user_ctx = nullptr;
+    uri_postCredentials.handler = post_handler;
 
 
     uri_post = {};
@@ -166,12 +205,20 @@ HttpServer::HttpServer()
     uri_patch.handler = cors_handler;
 
   
-    ws_uri_handler_options= {};
-    ws_uri_handler_options.uri = "/ws";
-    ws_uri_handler_options.method = HTTP_GET;
-    ws_uri_handler_options.user_ctx = this;
-    ws_uri_handler_options.handler =  ws_handler;
-    ws_uri_handler_options.is_websocket = true;
+    ws_APs_uri_handler_options= {};
+    ws_APs_uri_handler_options.uri = "/ws";
+    ws_APs_uri_handler_options.method = HTTP_GET;
+    ws_APs_uri_handler_options.user_ctx = this;
+    ws_APs_uri_handler_options.handler =  ws_aps_handler;
+    ws_APs_uri_handler_options.is_websocket = true;
+
+    ws_custom_params_uri_handler_options = {};
+    ws_custom_params_uri_handler_options.uri = "/cp"; //cp -custom parameters
+    ws_custom_params_uri_handler_options.method = HTTP_GET;
+    ws_custom_params_uri_handler_options.user_ctx = this;
+    ws_custom_params_uri_handler_options.handler =  ws_custmo_params_handler;
+    ws_custom_params_uri_handler_options.is_websocket = true;
+
 }
 
 void HttpServer::sendScanedAPs(const std::vector<wifi_ap_record_t>& ap)
@@ -182,10 +229,17 @@ void HttpServer::sendScanedAPs(const std::vector<wifi_ap_record_t>& ap)
     {
         valMap.emplace(std::make_pair<std::string,std::string>((char *)item.ssid,std::to_string(item.rssi)));
     }
-    messagePayload = JsonDecoder::encodeJson(valMap); //TODO consider protect by mutex
+    APsMessagePayload = JsonDecoder::encodeJson(valMap); //TODO free string memory after send
 
     httpd_queue_work(server,sendAPsCallback,this);
 
+}
+
+void HttpServer::sendCustomParams(const std::map<std::string,std::string>& params)
+{
+    customParamsMessagePayload = JsonDecoder::encodeJson(params);//TODO free string memory after send
+    ESP_LOGE(TAG,"PARRAMS: %s",customParamsMessagePayload.c_str());
+    httpd_queue_work(server,sendCustomParamsCallback,this);
 }
 
 HttpServer::~HttpServer()
@@ -193,7 +247,7 @@ HttpServer::~HttpServer()
     stopServer();
 }
 
-bool HttpServer::startServer()
+bool HttpServer::startServer(bool enable_custom_params_socket)
 {
 
     /* Generate default configuration */
@@ -209,9 +263,10 @@ bool HttpServer::startServer()
         /* Register URI handlers */
         httpd_register_uri_handler(server, &uri_get);
         httpd_register_uri_handler(server, &uri_post);
-        httpd_register_uri_handler(server, &uri_options);
+        httpd_register_uri_handler(server, &uri_postCredentials);
         httpd_register_uri_handler(server, &androidCptv);
-        ESP_ERROR_CHECK(httpd_register_uri_handler(server, &ws_uri_handler_options));
+        ESP_ERROR_CHECK(httpd_register_uri_handler(server, &ws_APs_uri_handler_options));
+        if(enable_custom_params_socket) httpd_register_uri_handler(server, &ws_custom_params_uri_handler_options);
 
         return true;
     }

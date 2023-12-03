@@ -150,12 +150,17 @@ static void customEventsHandler(void* arg, esp_event_base_t event_base,
         ESP_LOGI(TAG,"SCAN_AVAILABLE_APS event received");
         wifiMgrPtr->scanAvailableWifiNetworks();
     }
+    else if (event_id == SEND_DEFAULT_PARAMETERS)
+    {
+        ESP_LOGI(TAG,"SEND_DEFAULT_PARAMETERS event received");
+        wifiMgrPtr->sendCustomParameters();
+    }
     else{
         ESP_LOGE(TAG,"Undefined custom event received. Id %d",CREDENTIALS_AQUIRED);
     }
 }
 
-WifiManagerIdf::WifiManagerIdf(const WifiManagerIdfConfig p_managerConfig):
+WifiManagerIdf::WifiManagerIdf(const WifiManagerIdfConfig& p_managerConfig):
 managerConfig(p_managerConfig)
 {
 
@@ -273,7 +278,7 @@ bool WifiManagerIdf::startHttpServer()
     }
 
     httpServer_ptr = std::make_unique<HttpServer>();
-    return httpServer_ptr->startServer();
+    return httpServer_ptr->startServer(!managerConfig.customParametersMap.empty());
 }
 
 void WifiManagerIdf::stopHttpServer()
@@ -318,6 +323,11 @@ void WifiManagerIdf::scanAvailableWifiNetworks() // wifi has to be in sta mode
 void WifiManagerIdf::sendScannedAP()
 {
     httpServer_ptr->sendScanedAPs(foundedAPs);
+}
+
+void WifiManagerIdf::sendCustomParameters()
+{
+    httpServer_ptr->sendCustomParams(managerConfig.customParametersMap);
 }
 
 WifiManagerIdf::~WifiManagerIdf()

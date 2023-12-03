@@ -9,6 +9,7 @@ struct WifiManagerIdfConfig
 {
     std::string ssid = "WIFI universal manager";
     bool shouldKeepAP = true;
+    std::map<std::string,std::string> customParametersMap;
 };
 
 class WifiManagerIdf
@@ -34,8 +35,9 @@ public:
     std::vector<wifi_ap_record_t> foundedAPs;
 
     
-    WifiManagerIdf(WifiManagerIdfConfig p_managerConfig);
+    WifiManagerIdf(const WifiManagerIdfConfig& p_managerConfig);
     void sendScannedAP();
+    void sendCustomParameters();
     bool setupWiFi(bool keepAP, bool andRun);
     void setupServerAndDns();
     void initWifi();
