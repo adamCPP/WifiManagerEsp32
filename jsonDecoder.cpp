@@ -79,6 +79,5 @@ std::optional<std::map<std::string, std:: string>> JsonDecoder::decodeJson(const
     
 
     cJSON_Delete(root);
-
     return customParametersMap;
 }

@@ -3,7 +3,7 @@
 const auto style = R"!(
     body {
       background: linear-gradient(to bottom, #808080, #c0c0c0);
-      height: 100vh;
+      min-height: 100vh;
       background-size: cover;
       background-repeat: no-repeat;
       text-align: center;
