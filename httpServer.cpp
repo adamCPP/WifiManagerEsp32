@@ -53,9 +53,7 @@ static esp_err_t post_handler(httpd_req_t *req)
     std::unique_ptr<char[]> charArray = std::make_unique<char[]>(51);  // Allocate space for 50 characters + null terminator
     httpd_req_recv(req,charArray.get(),50);
     ESP_LOGI(TAG,"%s",charArray.get());
-    std::optional<std::map<std::string, std:: string>>* credentials = new std::optional<std::map<std::string, std:: string>>(); //TODO memoty leak
-    *credentials = JsonDecoder::decodeJsonCredentials(charArray.get());
-    ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS, CREDENTIALS_AQUIRED, credentials, sizeof(*credentials),portMAX_DELAY));
+    ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS, CREDENTIALS_AQUIRED, charArray.get(),req->content_len+1,portMAX_DELAY));
     httpd_resp_send(req,"",HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
