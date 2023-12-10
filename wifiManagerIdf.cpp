@@ -9,6 +9,7 @@
 #include"dnsRedirector.h"
 #include"customEvents.hpp"
 #include"spiffsControler.hpp"
+#include"jsonDecoder.hpp"
 #include<utility>
 	
 
@@ -121,11 +122,12 @@ static void customEventsHandler(void* arg, esp_event_base_t event_base,
         ESP_LOGI(TAG,"CREDENTIALS_AQUIRED event received");
         if(wifiMgrPtr)
         { 
-            auto ptr= static_cast<std::optional<std::map<std::string, std:: string>>*>(event_data);
+            auto ptr= static_cast<std::optional<std::map<std::string, std:: string>>*>(event_data); //TODO do not pass associative container through esp_event_post due to memcpy
             if(ptr == nullptr)
             {
                 ESP_LOGE(TAG,"Bad casting");
             }
+
             wifiMgrPtr->credentials_opt = ptr->value();
             if(wifiMgrPtr->managerConfig.shouldKeepAP) 
             {
@@ -155,8 +157,28 @@ static void customEventsHandler(void* arg, esp_event_base_t event_base,
         ESP_LOGI(TAG,"SEND_DEFAULT_PARAMETERS event received");
         wifiMgrPtr->sendCustomParameters();
     }
+    else if(event_id == CUSTOM_PARAMETERS_RECEIVED)
+    {
+        ESP_LOGI(TAG,"CUSTOM_PARAMETERS_RECEIVED event received");
+        auto customParams_ptr = static_cast<char*>(event_data);
+        auto decodedJson = JsonDecoder::decodeJson(customParams_ptr);
+        for(auto& el : decodedJson.value())
+        {
+            ESP_LOGI("MANAGER","key : %s val : %s",el.first.c_str(),el.second.c_str());
+        }
+        if(decodedJson.has_value())
+        {
+            wifiMgrPtr->managerConfig.customParametersMap = decodedJson.value();
+        }
+        else{
+            ESP_LOGE(TAG,"Custom params decoding error");
+        }
+
+            
+
+    }
     else{
-        ESP_LOGE(TAG,"Undefined custom event received. Id %d",CREDENTIALS_AQUIRED);
+        ESP_LOGE(TAG,"Undefined custom event received. Id %d",int(event_id));
     }
 }
 

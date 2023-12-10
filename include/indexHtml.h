@@ -18,6 +18,7 @@ const auto html_page = R"!(
     <input type="password" id="password-input" placeholder="Password" required><br>
     <button type="button" onclick="sendCredentials()">Connect</button>
   </form>
+  <div id="CP"></div>
   <script src="myScript.js"></script>
 </body>
 </html>

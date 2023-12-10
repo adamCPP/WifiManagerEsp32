@@ -9,13 +9,13 @@ if(!socketAPs || socketAPs.readyState !== WebSocket.OPEN)
 socketAPs.addEventListener('message',handleApListMessage);
 socketAPs.addEventListener('open', function (event) {
 refreshAps();});
-var socketCustmoParams;
-if(!socketCustmoParams || socketCustmoParams.readyState !== WebSocket.OPEN)
+var socketCustomParams;
+if(!socketCustomParams || socketCustomParams.readyState !== WebSocket.OPEN)
 {
-    socketCustmoParams = new WebSocket("ws://4.3.2.1/cp");
+    socketCustomParams = new WebSocket("ws://4.3.2.1/cp");
 } 
-socketCustmoParams.addEventListener('message',handleCustomParamsMessage);
-socketCustmoParams.addEventListener('open', function (event) {
+socketCustomParams.addEventListener('message',handleCustomParamsMessage);
+socketCustomParams.addEventListener('open', function (event) {
     refreshCustomParams();});
 function sendCredentials() {
     var ssid = document.getElementById("ssid-input").value;
@@ -51,7 +51,7 @@ function refreshAps()
 
 function refreshCustomParams()
 {
-    socketCustmoParams.send("ping");
+    socketCustomParams.send("ping");
 
 }
 
@@ -72,6 +72,40 @@ function handleApListMessage(event)
 }
 function handleCustomParamsMessage(event)
 {
-    console.log(event.data);
-} 
+console.log(event.data);
+var htmlElemet = document.createElement("h2");
+htmlElemet.textContent = "Custom parameters";
+var cpDiv = document.getElementById("CP");
+cpDiv.appendChild(htmlElemet);
+jsonObject = JSON.parse(event.data);
+for (var key in jsonObject) {
+if (jsonObject.hasOwnProperty(key)) {
+    var label = document.createElement("label");
+    label.textContent = key + ": ";
+    htmlElemet = document.createElement("input");
+    htmlElemet.type = "text";
+    htmlElemet.name = key;
+    htmlElemet.value = jsonObject[key];
+    var newDiv = document.createElement('div');
+    newDiv.appendChild(label);
+    newDiv.appendChild(htmlElemet);
+    cpDiv.appendChild(newDiv);
+    }
+}  
+htmlElemet = document.createElement("button");
+htmlElemet.textContent = "Send";
+htmlElemet.onclick = function(){sendBackCP();};
+cpDiv.appendChild(htmlElemet);
+}
+function sendBackCP()
+{
+    var updatedObject = {};
+    var inputElements = document.querySelectorAll("#CP input");
+    inputElements.forEach(function (inputElement) {
+        updatedObject[inputElement.name] = inputElement.value;
+    });
+    console.log("Updated Object:", updatedObject);
+    var jsonString = JSON.stringify(updatedObject);
+    socketCustomParams.send(jsonString);
+}
 )!";

@@ -53,7 +53,7 @@ static esp_err_t post_handler(httpd_req_t *req)
     std::unique_ptr<char[]> charArray = std::make_unique<char[]>(51);  // Allocate space for 50 characters + null terminator
     httpd_req_recv(req,charArray.get(),50);
     ESP_LOGI(TAG,"%s",charArray.get());
-    std::optional<std::map<std::string, std:: string>>* credentials = new std::optional<std::map<std::string, std:: string>>();
+    std::optional<std::map<std::string, std:: string>>* credentials = new std::optional<std::map<std::string, std:: string>>(); //TODO memoty leak
     *credentials = JsonDecoder::decodeJsonCredentials(charArray.get());
     ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS, CREDENTIALS_AQUIRED, credentials, sizeof(*credentials),portMAX_DELAY));
     httpd_resp_send(req,"",HTTPD_RESP_USE_STRLEN);
@@ -88,7 +88,7 @@ esp_err_t ws_aps_handler(httpd_req_t *req) // TODO code duplication with other h
         ESP_LOGE(TAG, "httpd_ws_recv_frame failed to get frame len with %d", ret);
         return ret;
     }
-    auto buff = std::make_unique<u_int8_t>(ws_pkt.len);
+    auto buff = std::make_unique<u_int8_t[]>(ws_pkt.len);
     ESP_LOGE(TAG,"Package length = %d",ws_pkt.len);
     if (ws_pkt.len)
     {
@@ -125,7 +125,7 @@ esp_err_t ws_custmo_params_handler(httpd_req_t *req)
         ESP_LOGE(TAG, "httpd_ws_recv_frame failed to get frame len with %d", ret);
         return ret;
     }
-    auto buff = std::make_unique<u_int8_t>(ws_pkt.len);
+    auto buff = std::make_unique<u_int8_t[]>(ws_pkt.len);
     ESP_LOGE(TAG,"Package length = %d",ws_pkt.len);
     if (ws_pkt.len)
     {
@@ -139,10 +139,19 @@ esp_err_t ws_custmo_params_handler(httpd_req_t *req)
         }
         ESP_LOGI(TAG, "Got packet with message: %s", ws_pkt.payload);
     }
+    
 
     httpServerWraper_ptr->customParamsSocketDescriptor = httpd_req_to_sockfd(req);
-    ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS,SEND_DEFAULT_PARAMETERS,nullptr,0,portMAX_DELAY));
-
+    std::string respPayload((char*) ws_pkt.payload,ws_pkt.len);
+    if(respPayload == "ping")
+    {
+        ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS,SEND_DEFAULT_PARAMETERS,nullptr,0,portMAX_DELAY));
+    }
+    else
+    {   
+        ESP_ERROR_CHECK(esp_event_post(CUSTOM_EVENTS,CUSTOM_PARAMETERS_RECEIVED,respPayload.c_str(),respPayload.length(),portMAX_DELAY));
+    }
+    
     return ESP_OK;
 }
 

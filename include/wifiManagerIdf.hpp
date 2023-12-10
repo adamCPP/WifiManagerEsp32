@@ -31,7 +31,7 @@ class WifiManagerIdf
 public:
     std::optional<std::map<std::string, std::string>> credentials_opt;
     std::optional<bool> staStarted_opt;
-    const WifiManagerIdfConfig managerConfig;
+    WifiManagerIdfConfig managerConfig;
     std::vector<wifi_ap_record_t> foundedAPs;
 
     
