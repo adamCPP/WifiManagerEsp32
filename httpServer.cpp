@@ -115,7 +115,7 @@ esp_err_t ws_custmo_params_handler(httpd_req_t *req)
     return ESP_OK;
     }
     httpd_ws_frame_t ws_pkt = {};
-    ws_pkt.type = HTTPD_WS_TYPE_TEXT; // necessary?
+    ws_pkt.type = HTTPD_WS_TYPE_TEXT; // TODO necessary?
     auto ret = httpd_ws_recv_frame(req,&ws_pkt,0);
 
     if (ret != ESP_OK)

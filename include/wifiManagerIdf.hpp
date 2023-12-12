@@ -4,12 +4,15 @@
 #include "esp_wifi.h"
 #include<memory>
 #include<vector>
+#include <functional>
 
 struct WifiManagerIdfConfig
 {
     std::string ssid = "WIFI universal manager";
     bool shouldKeepAP = true;
     std::map<std::string,std::string> customParametersMap;
+    std::function<void(void)> customParametersReceivedCallback;
+
 };
 
 class WifiManagerIdf

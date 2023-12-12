@@ -170,7 +170,11 @@ static void customEventsHandler(void* arg, esp_event_base_t event_base,
         }
         else{
             ESP_LOGE(TAG,"Custom params decoding error");
-        }  
+        }
+        if(wifiMgrPtr->managerConfig.customParametersReceivedCallback)
+        {
+            wifiMgrPtr->managerConfig.customParametersReceivedCallback();
+        }
     }
     else{
         ESP_LOGE(TAG,"Undefined custom event received. Id %d",int(event_id));
