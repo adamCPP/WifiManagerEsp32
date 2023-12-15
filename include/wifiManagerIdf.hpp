@@ -12,7 +12,7 @@ struct WifiManagerIdfConfig
     bool shouldKeepAP = true;
     std::map<std::string,std::string> customParametersMap;
     std::function<void(void)> customParametersReceivedCallback;
-
+    bool enableLogger = true;
 };
 
 class WifiManagerIdf

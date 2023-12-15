@@ -17,6 +17,12 @@ if(!socketCustomParams || socketCustomParams.readyState !== WebSocket.OPEN)
 socketCustomParams.addEventListener('message',handleCustomParamsMessage);
 socketCustomParams.addEventListener('open', function (event) {
     refreshCustomParams();});
+var socketLogger;
+if(!socketLogger || socketLogger.readyState !== WebSocket.OPEN)
+{
+    socketLogger = new WebSocket("ws://4.3.2.1/log");
+} 
+socketLogger.addEventListener('message',handleLogs);
 function sendCredentials() {
     var ssid = document.getElementById("ssid-input").value;
     var password = document.getElementById("password-input").value;
@@ -107,5 +113,9 @@ function sendBackCP()
     console.log("Updated Object:", updatedObject);
     var jsonString = JSON.stringify(updatedObject);
     socketCustomParams.send(jsonString);
+}
+function handleLogs(event)
+{
+    console.log(event.data);
 }
 )!";

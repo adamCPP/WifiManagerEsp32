@@ -19,6 +19,7 @@ const auto html_page = R"!(
     <button type="button" onclick="sendCredentials()">Connect</button>
   </form>
   <div id="CP"></div>
+  <div id="LOG"></div>
   <script src="myScript.js"></script>
 </body>
 </html>

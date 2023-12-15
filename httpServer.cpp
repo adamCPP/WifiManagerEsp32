@@ -153,6 +153,42 @@ esp_err_t ws_custmo_params_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+esp_err_t ws_logger_handler(httpd_req_t *req)
+{
+    auto httpServerWraper_ptr = static_cast<HttpServer*>(req->user_ctx);
+
+    if (req->method == HTTP_GET) {
+    ESP_LOGI(TAG, "Handshake done for logger, the new connection was opened");
+    return ESP_OK;
+    }
+    httpd_ws_frame_t ws_pkt = {};
+    ws_pkt.type = HTTPD_WS_TYPE_TEXT; // TODO necessary?
+    auto ret = httpd_ws_recv_frame(req,&ws_pkt,0);
+
+    if (ret != ESP_OK)
+    {
+        ESP_LOGE(TAG, "httpd_ws_recv_frame failed to get frame len with %d", ret);
+        return ret;
+    }
+    auto buff = std::make_unique<u_int8_t[]>(ws_pkt.len);
+    ESP_LOGE(TAG,"Package length = %d",ws_pkt.len);
+    if (ws_pkt.len)
+    {
+
+        ws_pkt.payload = buff.get();
+        ret = httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len);
+        if (ret != ESP_OK)
+        {
+            ESP_LOGE(TAG, "httpd_ws_recv_frame failed with %d", ret);
+            return ret;
+        }
+        ESP_LOGI(TAG, "Got packet with message: %s", ws_pkt.payload);
+    }
+    
+    httpServerWraper_ptr->loggerSocketDescriptor = httpd_req_to_sockfd(req);
+    return ESP_OK;
+}
+
 void sendAPsCallback(void *arg)
 {
     auto httpServer_ptr = static_cast<HttpServer*>(arg);
@@ -260,6 +296,13 @@ HttpServer::HttpServer()
     ws_custom_params_uri_handler_options.handler =  ws_custmo_params_handler;
     ws_custom_params_uri_handler_options.is_websocket = true;
 
+    ws_logger_uri_handler_options = {};
+    ws_logger_uri_handler_options.uri = "/log"; //cp -custom parameters
+    ws_logger_uri_handler_options.method = HTTP_GET;
+    ws_logger_uri_handler_options.user_ctx = this;
+    ws_logger_uri_handler_options.handler =  ws_logger_handler;
+    ws_logger_uri_handler_options.is_websocket = true;
+
 }
 
 void HttpServer::sendScanedAPs(const std::vector<wifi_ap_record_t>& ap)
@@ -288,12 +331,13 @@ HttpServer::~HttpServer()
     stopServer();
 }
 
-bool HttpServer::startServer(bool enable_custom_params_socket)
+bool HttpServer::startServer(bool enable_custom_params_socket,bool enable_logger_socket)
 {
 
     /* Generate default configuration */
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.server_port = 80;
+    config.max_uri_handlers = 9;
 
     /* Empty handle to esp_http_server */
     server = nullptr;
@@ -309,7 +353,8 @@ bool HttpServer::startServer(bool enable_custom_params_socket)
         httpd_register_uri_handler(server, &uri_postCredentials);
         httpd_register_uri_handler(server, &androidCptv);
         ESP_ERROR_CHECK(httpd_register_uri_handler(server, &ws_APs_uri_handler_options));
-        if(enable_custom_params_socket) httpd_register_uri_handler(server, &ws_custom_params_uri_handler_options);
+        if(enable_custom_params_socket) ESP_ERROR_CHECK(httpd_register_uri_handler(server, &ws_custom_params_uri_handler_options));
+        if(enable_logger_socket) ESP_ERROR_CHECK(httpd_register_uri_handler(server, &ws_logger_uri_handler_options));
 
         return true;
     }

@@ -19,6 +19,7 @@ class HttpServer
     httpd_uri_t uri_postCredentials;
     httpd_uri_t ws_APs_uri_handler_options;
     httpd_uri_t ws_custom_params_uri_handler_options;
+    httpd_uri_t ws_logger_uri_handler_options;
 
     std::string APsMessagePayload; // JSON encoded
     std::string customParamsMessagePayload; // JSON encoded
@@ -37,7 +38,7 @@ public:
     void sendScanedAPs(const std::vector<wifi_ap_record_t>&);
     void sendCustomParams(const std::map<std::string,std::string>&);
     ~HttpServer();
-    bool startServer(bool enable_custom_params_socket); 
+    bool startServer(bool enable_custom_params_socket,bool enable_logger_socket); 
     void stopServer(); // TODO consider moving it to private scope
     httpd_handle_t& getServerHandle(){return server;};
     std::string& getAPsMessagePayload(){return APsMessagePayload;};

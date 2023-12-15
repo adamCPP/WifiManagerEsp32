@@ -299,7 +299,7 @@ bool WifiManagerIdf::startHttpServer()
     }
 
     httpServer_ptr = std::make_unique<HttpServer>();
-    return httpServer_ptr->startServer(!managerConfig.customParametersMap.empty());
+    return httpServer_ptr->startServer(!managerConfig.customParametersMap.empty(),managerConfig.enableLogger);
 }
 
 void WifiManagerIdf::stopHttpServer()
