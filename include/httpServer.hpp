@@ -23,6 +23,7 @@ class HttpServer
 
     std::string APsMessagePayload; // JSON encoded
     std::string customParamsMessagePayload; // JSON encoded
+    std::string logMessagePayload;
 
 
     // std::function<esp_err_t(httpd_req_t*)> handler;
@@ -30,9 +31,9 @@ class HttpServer
 
 public:
     
-    int APsSocketDescriptor=0;
-    int loggerSocketDescriptor=0;
-    int customParamsSocketDescriptor=0;
+    int APsSocketDescriptor=1;
+    int loggerSocketDescriptor=-1;
+    int customParamsSocketDescriptor=-1;
 
     HttpServer();
     void sendScanedAPs(const std::vector<wifi_ap_record_t>&);
@@ -43,5 +44,7 @@ public:
     httpd_handle_t& getServerHandle(){return server;};
     std::string& getAPsMessagePayload(){return APsMessagePayload;};
     std::string& getCustomParametersMessagePayload(){return customParamsMessagePayload;};
+    std::string& getLogMessagePayload(){return logMessagePayload;};
+    void sendLog(std::string log);
     
 };

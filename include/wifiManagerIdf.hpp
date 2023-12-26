@@ -39,6 +39,7 @@ public:
 
     
     WifiManagerIdf(const WifiManagerIdfConfig& p_managerConfig);
+    void sendLog(std::string log);
     void sendScannedAP();
     void sendCustomParameters();
     bool setupWiFi(bool keepAP, bool andRun);

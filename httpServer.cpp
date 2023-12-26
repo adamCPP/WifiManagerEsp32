@@ -215,7 +215,7 @@ void sendCustomParamsCallback(void *arg) //TODO code duplication
     auto httpServer_ptr = static_cast<HttpServer*>(arg);
     static httpd_ws_frame_t ws_pkt;
     ws_pkt.type = HTTPD_WS_TYPE_TEXT;
-    ws_pkt.payload = (uint8_t*)httpServer_ptr->getCustomParametersMessagePayload().c_str();
+    ws_pkt.payload = (uint8_t*)httpServer_ptr->getCustomParametersMessagePayload().c_str(); //TODO oduplication of func call
     ws_pkt.len = httpServer_ptr->getCustomParametersMessagePayload().length();
 
     httpd_ws_client_info_t clientInfo = httpd_ws_get_fd_info(httpServer_ptr->getServerHandle(),httpServer_ptr->customParamsSocketDescriptor);
@@ -226,6 +226,26 @@ void sendCustomParamsCallback(void *arg) //TODO code duplication
     }
 
     auto ret = httpd_ws_send_frame_async(httpServer_ptr->getServerHandle(),httpServer_ptr->customParamsSocketDescriptor,&ws_pkt);
+    if (ret!= ESP_OK) ESP_LOGE(TAG,"%s",esp_err_to_name(ret));
+
+}
+
+void sendLogCallback(void *arg) //TODO code duplication
+{
+    auto httpServer_ptr = static_cast<HttpServer*>(arg);
+    static httpd_ws_frame_t ws_pkt;
+    ws_pkt.type = HTTPD_WS_TYPE_TEXT;
+    ws_pkt.payload = (uint8_t*)httpServer_ptr->getLogMessagePayload().c_str(); //TODO oduplication of func call
+    ws_pkt.len = httpServer_ptr->getLogMessagePayload().length();
+
+    httpd_ws_client_info_t clientInfo = httpd_ws_get_fd_info(httpServer_ptr->getServerHandle(),httpServer_ptr->loggerSocketDescriptor);
+    if(clientInfo != HTTPD_WS_CLIENT_WEBSOCKET)
+    {
+        ESP_LOGE(TAG,"Invalid socket type. Response not sended %d", clientInfo);
+        return;
+    }
+
+    auto ret = httpd_ws_send_frame_async(httpServer_ptr->getServerHandle(),httpServer_ptr->loggerSocketDescriptor,&ws_pkt);
     if (ret!= ESP_OK) ESP_LOGE(TAG,"%s",esp_err_to_name(ret));
 
 }
@@ -324,6 +344,12 @@ void HttpServer::sendCustomParams(const std::map<std::string,std::string>& param
     customParamsMessagePayload = JsonDecoder::encodeJson(params);//TODO free string memory after send
     ESP_LOGE(TAG,"PARRAMS: %s",customParamsMessagePayload.c_str());
     httpd_queue_work(server,sendCustomParamsCallback,this);
+}
+
+void HttpServer::sendLog(std::string log)
+{
+    logMessagePayload = log;
+    httpd_queue_work(server,sendLogCallback,this);
 }
 
 HttpServer::~HttpServer()

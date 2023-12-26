@@ -351,6 +351,16 @@ void WifiManagerIdf::sendCustomParameters()
     httpServer_ptr->sendCustomParams(managerConfig.customParametersMap);
 }
 
+void WifiManagerIdf::sendLog(std::string log) // TODO check if server is available
+{
+    if(httpServer_ptr->loggerSocketDescriptor == -1)
+    {
+        ESP_LOGE(TAG, "Web socket for logging is not available yet");
+        return;
+    }
+    httpServer_ptr->sendLog(log);
+}
+
 WifiManagerIdf::~WifiManagerIdf()
 {
     stopHttpServer();

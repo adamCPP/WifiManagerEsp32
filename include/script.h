@@ -23,6 +23,8 @@ if(!socketLogger || socketLogger.readyState !== WebSocket.OPEN)
     socketLogger = new WebSocket("ws://4.3.2.1/log");
 } 
 socketLogger.addEventListener('message',handleLogs);
+socketLogger.addEventListener('open', function (event) {
+      socketLogger.send("Logger opened");});
 function sendCredentials() {
     var ssid = document.getElementById("ssid-input").value;
     var password = document.getElementById("password-input").value;
@@ -116,6 +118,14 @@ function sendBackCP()
 }
 function handleLogs(event)
 {
-    console.log(event.data);
+    if (!document.getElementById('LOG')) {
+      var textarea = document.createElement('textarea');
+      textarea.id = 'LOG';
+      textarea.readOnly = true;
+      document.body.appendChild(textarea);
+      }
+      var textarea = document.getElementById('LOG');
+      textarea.value += event.data + '\n';
+      textarea.scrollTop = textarea.scrollHeight;
 }
 )!";

@@ -37,4 +37,8 @@ const auto style = R"!(
         background-color: #3498db;
         color: #fff;
     }
+    textarea {
+            width: 90%;
+            height: 300px;
+    }
 )!";
