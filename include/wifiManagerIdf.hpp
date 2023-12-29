@@ -15,7 +15,7 @@ struct WifiManagerIdfConfig
     bool enableLogger = true;
 };
 
-class WifiManagerIdf
+class WifiManagerEsp32
 {
     std::unique_ptr<HttpServer> httpServer_ptr;
     
@@ -38,7 +38,7 @@ public:
     std::vector<wifi_ap_record_t> foundedAPs;
 
     
-    WifiManagerIdf(const WifiManagerIdfConfig& p_managerConfig);
+    WifiManagerEsp32(const WifiManagerIdfConfig& p_managerConfig);
     void sendLog(std::string log);
     void sendScannedAP();
     void sendCustomParameters();
@@ -46,7 +46,7 @@ public:
     void setupServerAndDns();
     void initWifi();
     void scanAvailableWifiNetworks();
-    ~WifiManagerIdf();
+    ~WifiManagerEsp32();
     
 
 };

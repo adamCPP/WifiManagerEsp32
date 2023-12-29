@@ -32,7 +32,7 @@ void set_wifi_ap_ip(esp_netif_t *esp_netif_ap)
 static void wifiEventHandler(void* arg, esp_event_base_t event_base,
                                     int32_t event_id, void* event_data)
 {
-    auto wifiManagerIdf = static_cast<WifiManagerIdf*>(arg);
+    auto wifiManagerIdf = static_cast<WifiManagerEsp32*>(arg);
 
     if(!wifiManagerIdf)
     {
@@ -114,7 +114,7 @@ static void customEventsHandler(void* arg, esp_event_base_t event_base,
                                     int32_t event_id, void* event_data)
 {
 
-    auto wifiMgrPtr = static_cast<WifiManagerIdf*>(arg);
+    auto wifiMgrPtr = static_cast<WifiManagerEsp32*>(arg);
     
 
     if (event_id == CREDENTIALS_AQUIRED)
@@ -181,7 +181,7 @@ static void customEventsHandler(void* arg, esp_event_base_t event_base,
     }
 }
 
-WifiManagerIdf::WifiManagerIdf(const WifiManagerIdfConfig& p_managerConfig):
+WifiManagerEsp32::WifiManagerEsp32(const WifiManagerIdfConfig& p_managerConfig):
 managerConfig(p_managerConfig)
 {
 
@@ -220,7 +220,7 @@ managerConfig(p_managerConfig)
 
 }
 
-void WifiManagerIdf::setupServerAndDns()
+void WifiManagerEsp32::setupServerAndDns()
 {
 
     bool serverStarted = startHttpServer();
@@ -235,7 +235,7 @@ void WifiManagerIdf::setupServerAndDns()
     }
 }
 
-void WifiManagerIdf::initWifi()
+void WifiManagerEsp32::initWifi()
 {
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     cfg.ampdu_rx_enable = false; // no idea what i am doing here but this is for android captive portal
@@ -248,7 +248,7 @@ void WifiManagerIdf::initWifi()
 }
 
 
-void WifiManagerIdf::reqisterCutomEvents()
+void WifiManagerEsp32::reqisterCutomEvents()
 {
     
     ESP_ERROR_CHECK(esp_event_handler_register(CUSTOM_EVENTS,
@@ -261,7 +261,7 @@ void WifiManagerIdf::reqisterCutomEvents()
 }
 
 
-bool WifiManagerIdf::setupWiFi(bool keepAP, bool andRun)
+bool WifiManagerEsp32::setupWiFi(bool keepAP, bool andRun)
 {
 
     if(credentials_opt.has_value())
@@ -290,7 +290,7 @@ bool WifiManagerIdf::setupWiFi(bool keepAP, bool andRun)
 }
 
 
-bool WifiManagerIdf::startHttpServer()
+bool WifiManagerEsp32::startHttpServer()
 {
     if(httpServer_ptr)
     {
@@ -302,7 +302,7 @@ bool WifiManagerIdf::startHttpServer()
     return httpServer_ptr->startServer(!managerConfig.customParametersMap.empty(),managerConfig.enableLogger);
 }
 
-void WifiManagerIdf::stopHttpServer()
+void WifiManagerEsp32::stopHttpServer()
 {
     if(httpServer_ptr == nullptr)
     {
@@ -312,7 +312,7 @@ void WifiManagerIdf::stopHttpServer()
 
 }
 
-bool WifiManagerIdf::tryFetchCredentialsFromSPIFFS()
+bool WifiManagerEsp32::tryFetchCredentialsFromSPIFFS()
 {
     SPIFFSControler spiffsControler;
 
@@ -334,24 +334,24 @@ bool WifiManagerIdf::tryFetchCredentialsFromSPIFFS()
     return false;
 }
 
-void WifiManagerIdf::scanAvailableWifiNetworks() // wifi has to be in sta mode
+void WifiManagerEsp32::scanAvailableWifiNetworks() // wifi has to be in sta mode
 {
 
   ESP_LOGE(TAG, "Scanning available networks");
   ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true));
 }
 
-void WifiManagerIdf::sendScannedAP()
+void WifiManagerEsp32::sendScannedAP()
 {
     httpServer_ptr->sendScanedAPs(foundedAPs);
 }
 
-void WifiManagerIdf::sendCustomParameters()
+void WifiManagerEsp32::sendCustomParameters()
 {
     httpServer_ptr->sendCustomParams(managerConfig.customParametersMap);
 }
 
-void WifiManagerIdf::sendLog(std::string log) // TODO check if server is available
+void WifiManagerEsp32::sendLog(std::string log) // TODO check if server is available
 {
     if(httpServer_ptr->loggerSocketDescriptor == -1)
     {
@@ -361,7 +361,7 @@ void WifiManagerIdf::sendLog(std::string log) // TODO check if server is availab
     httpServer_ptr->sendLog(log);
 }
 
-WifiManagerIdf::~WifiManagerIdf()
+WifiManagerEsp32::~WifiManagerEsp32()
 {
     stopHttpServer();
     esp_wifi_stop();
