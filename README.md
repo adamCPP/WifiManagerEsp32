@@ -16,12 +16,12 @@ WiFiManagerEsp32 is a C++ library inspired by [WiFiManager](https://github.com/t
 - Displays logs on the Captive portal page.
 
 # Setup on espidf
-**Bare espidf**
-**PlatformIO espidf**
+**Bare espidf**\
+**PlatformIO espidf**\
 TODO
 # Setup on arduino-esp32
-**PlatformIO arduino-esp32**
-**Arduino IDE**
+**PlatformIO arduino-esp32**\
+**Arduino IDE**\
 TODO
 # How to use
 TODO
