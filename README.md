@@ -7,7 +7,13 @@ WiFiManagerEsp32 is a C++ library inspired by [WiFiManager](https://github.com/t
   <img src="assets/uniwersalWiFiManager.png" alt="Desktop view">
 </p>
 
-
+# Features
+- Operates in STA (Station) mode.
+- Supports AP_STA (Access Point + Station) mode.
+- Saves credentials in non-volatile flash memory.
+- Captive portal that works on Android and Linux.
+- Provides the ability to specify custom parameters.
+- Displays logs on the Captive portal page.
 # Menuconfig
 CONFIG_HTTPD_WS_SUPPORT
 
