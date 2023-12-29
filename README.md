@@ -1,6 +1,6 @@
 Wifi manger library 
 
-![WifiManager](https://imgur.com/a/uwa1VwL)
+![image description](./assets/uniwersalWiFiManager.png)
 
 
 # Menuconfig
