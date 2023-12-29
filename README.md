@@ -14,6 +14,18 @@ WiFiManagerEsp32 is a C++ library inspired by [WiFiManager](https://github.com/t
 - Captive portal that works on Android and Linux.
 - Provides the ability to specify custom parameters.
 - Displays logs on the Captive portal page.
+
+# Setup on espidf
+**Bare espidf**
+**PlatformIO espidf**
+TODO
+# Setup on arduino-esp32
+**PlatformIO arduino-esp32**
+**Arduino IDE**
+TODO
+# How to use
+TODO
+
 # Menuconfig
 CONFIG_HTTPD_WS_SUPPORT
 
